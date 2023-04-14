@@ -10,6 +10,7 @@ app.use(cors());
 app.use(json());
 //app.use(express.json())
 dotenv.config();
+dayjs().format();
 
 
 //conexão com o Banco de dados (que é uma aplicação separada do back que por sua vez é separada do front)
@@ -23,24 +24,24 @@ mongoClient.connect()
 app.post("/participants", async (req, res) => {
     const {name} = req.body;
     const body = {name, lastStatus: Date.now()};
+    const message = { from: name, to: 'Todos', text: 'entra na sala...', type: 'status', time: dayjs().format('HH:mm:ss')}
     if(!name) {
         return res.status(422).send("Campo nome incorreto, digite um nome válido!");
     }
     try {
         const data = await db.collection("participants").findOne({name: name})
-        if(data) {
-            return res.status(409).send("Este nome já está sendo usado, escolha outro!");
-        } else {
-           await db.collection("participants").insertOne(body);
-           await db.collection("messages".insertOne({ from: name, to: 'Todos', text: 'entra na sala...', type: 'status', time: dayjs().format('HH/mm/ss')}));
-           return res.send(201);
-        }
+        if(data) return res.status(409).send("Este nome já está sendo usado, escolha outro!");
+
+        await db.collection("participants").insertOne(body);
+        await db.collection("messages".insertOne(message));
+        return res.send(201);
+        
     }catch (err) {
         res.status.send(err.message)
     }
 })
 
-//Função GET
+//Função GET participantes
 app.get("/participants", async (req, res) => {
     try {
         const listaParticipantes = await db.collection("participants").find();
