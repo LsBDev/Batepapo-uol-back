@@ -34,7 +34,7 @@ app.post("/participants", async (req, res) => {
     const body = {name, lastStatus: Date.now()};
     const newMessage = { 
         from: name, 
-        to: 'Todos', 
+        to: 'Todos',
         text: 'entra na sala...', 
         type: 'status', 
         time: dayjs().format('HH:mm:ss')
@@ -47,7 +47,7 @@ app.post("/participants", async (req, res) => {
         if(data) return res.status(409).send("Este nome já está sendo usado, escolha outro!");
 
         await db.collection("participants").insertOne(body);
-        await db.collection("newmessages".insertOne(newMessage));
+        await db.collection("messages").insertOne(newMessage);
         return res.send(201);
         
     }catch (err) {
@@ -70,23 +70,31 @@ app.get("/participants", async (req, res) => {
 })
 
 //Função de POST Mensagens
-app.post("/messages", (req, res) => {
+app.post("/messages", async (req, res) => {
     const {to, text, type} = req.body;
     const {user} = req.header;
+    const newMessage = {
+        from: user,
+        to: to,
+        text: text,
+        type: type,
+        time: dayjs().format('HH:mm:ss')
+    }
     if(!to || !text) {
         return res.sendStatus(422);
     } else if(type !== "message" ||  type !== "private_message") {
         return res.sendStatus(422);
     }
-    // db.collection("participants").findOne(user)
-    //     .then(() => {
-
-    //     })
-    //     .catch()
-    // if(!) {
-    //     return res.status(422).send("Participante não existe");
-    // }
-
+    try {
+        const participanteNaSala = await db.collection("participants").findOne(user);
+        if(!participanteNaSala) {
+            return res.status(422).send("Participante não existe");
+        }
+        await db.collection("messages").insertOne(newMessage);
+        res.sendStatus(201);
+    }catch (err) {
+        res.status.send(err.message)
+    }
 })
 
 
