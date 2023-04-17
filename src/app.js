@@ -26,21 +26,28 @@ const mongoClient = new MongoClient(process.env.DATABASE_URL);
 //Função POST cadastrar participante
 app.post("/participants", async (req, res) => {
     const { name } = req.body;
-    const newUser = {name, lastStatus: Date.now()};
-    const userSchema = joi.object({ name: joi.string().required() });
-    const validation = userSchema.validate(name);
+    const user = {name: name}
     const message = { 
-        from: name, 
+        from: name,
         to: 'Todos', 
         text: 'entra na sala...', 
         type: 'status', 
         time: dayjs().format('HH:mm:ss')
     }
-
-    if(validation.error) {
-        const err = validation.error.details.map((detail) => detail.message);
-        return res.status(422).send(err);
-    }
+    // console.log(name)
+    const userSchema = joi.object({ name: joi.string().required() });
+    const validation = userSchema.validate(user);
+    // if(validation.error) {
+    //     const err = validation.error.details.map((detail) => detail.message);
+    //     console.log(err)
+    //     return res.status(422).send("err");
+    // }
+    if (validation.error) {
+        // const error = validation.error.details
+        res.status(422).send("Todos os campos são obrigatórios")
+        return;
+      }
+      const newUser = {name, lastStatus: Date.now()};
     
     try {
         const userData = await db.collection("participants").findOne({name: name})
@@ -61,23 +68,21 @@ app.get("/participants", async (req, res) => {
         const listaParticipantes = await db.collection("participants").find().toArray();
         if(listaParticipantes) {
             return res.send(listaParticipantes);
-        } else {
-            return res.send([]);
-        }
+        }        
     }catch (err) {
         res.send(err.message)
     }
-})
+});
+
 //Função de POST Mensagens
 app.post("/messages", async (req, res) => {
     const {to, text, type} = req.body;
+    const recMessage = {to: to, text: text, type: type};
     const {user} = req.header;
     const messageSchema = joi.object({
-        from: joi.string().required(),
         to: joi.string().required(),
         text: joi.string().required(),
-        type: joi.string().valid("message", "private_message").required(),
-        time: joi.string()
+        type: joi.string().valid("message", "private_message").required()
     })
     const message = {
         from: user,
@@ -86,27 +91,39 @@ app.post("/messages", async (req, res) => {
         type: type,
         time: dayjs().format('HH:mm:ss')
     }
-
+    const validation = messageSchema.validate(recMessage, {abortEarly: false});
+    if(validation.error) {
+        const err = validation.error.details.map((detail) => detail.message);
+        return res.status(422).send(err);
+    }
     try {
         const participantOn = await db.collection("participants").findOne({name: user});
-        if(!participantOn) return res.sendStatus(422);
-
-        const validation = messageSchema.validate(message, {abortEarly: false});
-        if(validation.error) {
-            const err = validation.error.details.map((detail) => detail.message);
-            return res.status(422).send(err);
-        }
+        if(!participantOn) return res.status(422).send("Participante não está na Sala");      
 
         await db.collection("messages").insertOne(message);
         return res.sendStatus(201);
 
+    }catch (err) {  
+        res.send(err.message)
+    }
+})
+
+//Função de GET Mensagens
+app.get("/messages", async (req, res) => {
+    const {user} = req.header;
+    const {limit} = Number(req.query);
+
+    try {
+        const allMessages = db.collection("messages").find({ $or: [ { to: { $in: [user, "Todos"] } }, { from: user } ] }).toArray().slice(-limit);
+        if(!limit) {
+
+            
+        }
+
     }catch (err) {
         res.send(err.message)
     }
-
-
 })
-
 //Finalizar as funções básicas de get post, estudar o Joi para validação -> assistir a aula de sexta feira novamente. Finalizar hj, ou deixar  quase pronto para arremate final amanhã.
 
 
