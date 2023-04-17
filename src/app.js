@@ -10,7 +10,6 @@ const app = express();
 app.use(cors());
 app.use(json()); // ou app.use(express.json())
 dotenv.config();
-// dayjs().format();
 
 
 //conexão com o Banco de dados (que é uma aplicação separada do back que por sua vez é separada do front)
@@ -34,16 +33,10 @@ app.post("/participants", async (req, res) => {
         type: 'status', 
         time: dayjs().format('HH:mm:ss')
     }
-    // console.log(name)
     const userSchema = joi.object({ name: joi.string().required() });
     const validation = userSchema.validate(user);
-    // if(validation.error) {
-    //     const err = validation.error.details.map((detail) => detail.message);
-    //     console.log(err)
-    //     return res.status(422).send("err");
-    // }
+
     if (validation.error) {
-        // const error = validation.error.details
         res.status(422).send("Todos os campos são obrigatórios")
         return;
       }
@@ -77,7 +70,7 @@ app.post("/participants", async (req, res) => {
     }catch (err) {
         res.send(err.message)
     }
-})
+});
 
 //Função GET participantes
 app.get("/participants", async (req, res) => {
@@ -113,6 +106,7 @@ app.post("/messages", async (req, res) => {
         const err = validation.error.details.map((detail) => detail.message);
         return res.status(422).send(err);
     }
+
     try {
         const participantOn = await db.collection("participants").findOne({name: user});
         if(!participantOn) return res.status(422).send("Participante não está na Sala");      
@@ -123,7 +117,7 @@ app.post("/messages", async (req, res) => {
     }catch (err) {  
         res.send(err.message)
     }
-})
+});
 
 //Função de GET Mensagens
 app.get("/messages", async (req, res) => {
@@ -138,14 +132,14 @@ app.get("/messages", async (req, res) => {
         }
         if(numberLimit < 0 || numberLimit === 0 || isNaN(numberLimit)) {
             return res.sendStatus(422);
-        }        
+        }
 
         res.status(200).send(allMessages.slice(-limit));
 
     }catch (err) {
         res.send(err.message)
     }
-})
+});
 
 //Função POST Status
 app.post("/status", async (req, res) => {
@@ -161,8 +155,7 @@ app.post("/status", async (req, res) => {
         res.send(err.message)
     }
 
-})
-//Finalizar as funções básicas de get post, estudar o Joi para validação -> assistir a aula de sexta feira novamente. Finalizar hj, ou deixar  quase pronto para arremate final amanhã.
+});
 
 
 
