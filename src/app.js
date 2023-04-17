@@ -110,20 +110,27 @@ app.post("/messages", async (req, res) => {
 
 //Função de GET Mensagens
 app.get("/messages", async (req, res) => {
-    const {user} = req.header;
-    const {limit} = Number(req.query);
+    const { user } = req.header;
+    const limit = req.query.limit;
+    const numberLimit = parseInt(limit);
 
     try {
-        const allMessages = db.collection("messages").find({ $or: [ { to: { $in: [user, "Todos"] } }, { from: user } ] }).toArray().slice(-limit);
-        if(!limit) {
-
-            
+        const allMessages = await db.collection("messages").find({ $or: [ { to: { $in: [user, "Todos"] } }, { from: user } ] }).toArray();
+        if(limit === "") {
+            return res.status(200).send(allMessages);
         }
+        if(numberLimit < 0 || numberLimit === 0 || isNaN(numberLimit)) {
+            return res.sendStatus(422);
+        }        
+
+        res.status(200).send(allMessages.slice(-limit));
 
     }catch (err) {
         res.send(err.message)
     }
 })
+
+//Função
 //Finalizar as funções básicas de get post, estudar o Joi para validação -> assistir a aula de sexta feira novamente. Finalizar hj, ou deixar  quase pronto para arremate final amanhã.
 
 
