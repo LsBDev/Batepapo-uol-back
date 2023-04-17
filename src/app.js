@@ -130,7 +130,23 @@ app.get("/messages", async (req, res) => {
     }
 })
 
-//Função
+//Função POST Status
+app.post("/status", async (req, res) => {
+    const {user} = req.headers;
+    try {
+        const partipantOn = await db.collection("participants").findOne({name: user})
+        if(!partipantOn || !user) return res.sendStatus(404);
+
+        await db.collection("participants").updateOne({name: user}, {$set: {lastStatus: Date.now()}})
+        return res.sendStatus(200);
+
+    }catch (err) {
+        res.send(err.message)
+    }
+     
+
+
+})
 //Finalizar as funções básicas de get post, estudar o Joi para validação -> assistir a aula de sexta feira novamente. Finalizar hj, ou deixar  quase pronto para arremate final amanhã.
 
 
