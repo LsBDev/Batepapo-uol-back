@@ -55,6 +55,23 @@ app.post("/participants", async (req, res) => {
 
         await db.collection("participants").insertOne(newUser);
         await db.collection("messages").insertOne(message);
+
+        setInterval(async () => {
+            const outMessage = { 
+                from: name,
+                to: 'Todos',
+                text: 'sai da sala...',
+                type: 'status',
+                time: dayjs().format('HH:mm:ss')
+            }
+            const user = await db.collection("participants").findOne({name: name});
+            if(user) {
+            if((Date.now() - user.lastStatus) > 10000) {
+                await db.collection("participants").deleteOne({name: name});
+                await db.collection("messages").insertOne(outMessage);
+            }}    
+        }, 15000);
+
         return res.sendStatus(201);
         
     }catch (err) {
@@ -101,7 +118,7 @@ app.post("/messages", async (req, res) => {
         if(!participantOn) return res.status(422).send("Participante não está na Sala");      
 
         await db.collection("messages").insertOne(message);
-        return res.sendStatus(201);
+        res.sendStatus(201);
 
     }catch (err) {  
         res.send(err.message)
@@ -143,8 +160,6 @@ app.post("/status", async (req, res) => {
     }catch (err) {
         res.send(err.message)
     }
-     
-
 
 })
 //Finalizar as funções básicas de get post, estudar o Joi para validação -> assistir a aula de sexta feira novamente. Finalizar hj, ou deixar  quase pronto para arremate final amanhã.
