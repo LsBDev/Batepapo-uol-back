@@ -43,8 +43,8 @@ app.post("/participants", async (req, res) => {
     }
     
     try {
-        const data = await db.collection("participants").findOne({name: name})
-        if(data) return res.status(409).send("Este nome já está sendo usado, escolha outro!");
+        const userData = await db.collection("participants").findOne({name: name})
+        if(userData) return res.status(409).send("Este nome já está sendo usado, escolha outro!");
 
         await db.collection("participants").insertOne(newUser);
         await db.collection("messages").insertOne(message);
@@ -88,10 +88,10 @@ app.post("/messages", async (req, res) => {
     }
 
     try {
-        const participantOn = await db.collection("participants").findOne(user);
+        const participantOn = await db.collection("participants").findOne({name: user});
         if(!participantOn) return res.sendStatus(422);
 
-        const validation = messageSchema.validate(message);
+        const validation = messageSchema.validate(message, {abortEarly: false});
         if(validation.error) {
             const err = validation.error.details.map((detail) => detail.message);
             return res.status(422).send(err);
